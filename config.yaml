@@ -1,0 +1,20 @@
+model:
+  window_size: 5
+  k_factors: 5
+  dataset: 'CMIN-US'
+  ollama_url: "http://localhost:11434/api/generate"
+  ollama_model: "llama3.1:8b-instruct-q8_0"
+  bert_model: 'bert-base-uncased'
+  data_root: "Data"
+
+logging:
+  level: "INFO"
+  format: '%(asctime)s - %(levelname)s - %(message)s'
+  file: "logs/llm_factor.log"
+
+data:
+  start_date: "2024-01-01"
+  end_date: "2024-03-01"
+  us_stock: "NVDA"
+  cn_stock: "000100.SZ"  # TCL科技
+  market: "CN"  # 可选: "CN" 或 "US" 
