@@ -6,20 +6,48 @@ import logging
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 from config import ModelConfig
 import pandas as pd
+import numpy as np
+from pathlib import Path
+import yaml
+from data_loader import DataLoader
+import json
+import os
 
 
 class Predictor:
     """预测器类"""
-    def __init__(self, config: ModelConfig):
-        self.config = config
-        self.logger = logging.getLogger(__name__)
+    def __init__(self, config_path: str = "config.yaml"):
+        """初始化预测器
+        Args:
+            config_path: 配置文件路径
+        """
+        self._setup_logging()
+        self.config = self._load_config(config_path)
+        self.data_loader = DataLoader(config_path)
         self._init_models()
+
+    def _setup_logging(self):
+        """设置日志配置"""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+        self.logger = logging.getLogger(__name__)
+
+    def _load_config(self, config_path: str) -> dict:
+        """加载配置文件"""
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            self.logger.error(f"加载配置文件失败: {str(e)}")
+            raise
 
     def _init_models(self):
         """初始化模型"""
         # 初始化BERT模型
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config.bert_model)
-        self.model = AutoModel.from_pretrained(self.config.bert_model)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config['model']['bert_model'])
+        self.model = AutoModel.from_pretrained(self.config['model']['bert_model'])
         
         # 设置设备
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,13 +64,13 @@ class Predictor:
             API响应文本
         """
         data = {
-            "model": self.config.ollama_model,
+            "model": self.config['model']['ollama_model'],
             "prompt": prompt,
             "stream": False
         }
 
         try:
-            response = requests.post(self.config.ollama_url, json=data)
+            response = requests.post(self.config['model']['ollama_url'], json=data)
             response.raise_for_status()
             return response.json()["response"]
         except Exception as e:
@@ -96,7 +124,7 @@ class Predictor:
         Returns:
             提取的因素列表
         """
-        prompt = f"""你是一个专业的金融分析师。请从以下新闻中提取可能影响{stock_target}股价的前{self.config.k_factors}个因素：
+        prompt = f"""你是一个专业的金融分析师。请从以下新闻中提取可能影响{stock_target}股价的前{self.config['model']['k_factors']}个因素：
 
 新闻内容：
 {news_text}
@@ -200,18 +228,18 @@ class Predictor:
             包含准确率和MCC的评估结果
         """
         try:
-            if len(stock_data) < self.config.window_size:
-                raise ValueError(f"数据量不足，需要至少{self.config.window_size}天的数据")
+            if len(stock_data) < self.config['model']['window_size']:
+                raise ValueError(f"数据量不足，需要至少{self.config['model']['window_size']}天的数据")
 
             predictions = []
             actuals = []
 
             # 对每个交易日进行预测
-            for i in range(self.config.window_size, len(stock_data)):
+            for i in range(self.config['model']['window_size'], len(stock_data)):
                 try:
                     date_target = stock_data.index[i].strftime('%Y-%m-%d')
-                    price_history = stock_data['Close'].iloc[i - self.config.window_size:i].tolist()
-                    date_history = stock_data.index[i - self.config.window_size:i].strftime('%Y-%m-%d').tolist()
+                    price_history = stock_data['Close'].iloc[i - self.config['model']['window_size']:i].tolist()
+                    date_history = stock_data.index[i - self.config['model']['window_size']:i].strftime('%Y-%m-%d').tolist()
 
                     # 获取当天的新闻
                     day_news = [n for n in news_data if n['publishedAt'].strftime('%Y-%m-%d') == date_target]
@@ -253,4 +281,234 @@ class Predictor:
 
         except Exception as e:
             self.logger.error(f"评估过程中出错: {str(e)}")
-            raise 
+            raise
+
+    def predict(self, market: str, symbol: str) -> Dict:
+        """进行预测
+        Args:
+            market: 市场类型（'CN' 或 'US'）
+            symbol: 股票代码
+        Returns:
+            预测结果字典
+        """
+        try:
+            # 获取最新数据
+            window_size = self.config['model']['window_size']
+            price_df, news_df = self.data_loader.get_latest_data(
+                market, symbol, window_size
+            )
+            
+            # 检查数据是否足够
+            if len(price_df) < window_size:
+                raise ValueError(f"价格数据不足，需要至少 {window_size} 条数据，但只有 {len(price_df)} 条")
+            
+            # 准备特征
+            features, _ = self.data_loader.prepare_features(
+                price_df, news_df, window_size
+            )
+            
+            # 检查特征是否为空
+            if features.empty:
+                raise ValueError("无法生成特征数据")
+            
+            # 获取最新的特征数据
+            latest_features = features.iloc[-1:]
+            
+            # 获取最新的新闻数据
+            latest_date = price_df['date'].max()
+            latest_news = news_df[
+                pd.to_datetime(news_df['publishedAt']).dt.date == 
+                pd.to_datetime(latest_date).date()
+            ]
+            
+            # 调用LLM进行分析
+            prediction, reasoning = self._analyze_with_llm(
+                latest_features, latest_news, market, symbol
+            )
+            
+            # 将Timestamp转换为字符串
+            latest_date_str = latest_date.strftime('%Y-%m-%d') if latest_date else None
+            
+            # 处理特征数据，确保所有值都是JSON可序列化的
+            feature_dict = {}
+            for key, value in latest_features.to_dict('records')[0].items():
+                if isinstance(value, (pd.Timestamp, np.datetime64)):
+                    feature_dict[key] = value.strftime('%Y-%m-%d')
+                elif isinstance(value, (np.int64, np.int32)):
+                    feature_dict[key] = int(value)
+                elif isinstance(value, (np.float64, np.float32)):
+                    feature_dict[key] = float(value)
+                else:
+                    feature_dict[key] = value
+            
+            return {
+                'date': latest_date_str,
+                'prediction': int(prediction),  # 确保是普通的int类型
+                'confidence': float(self._calculate_confidence(latest_features)),  # 确保是普通的float类型
+                'reasoning': str(reasoning),  # 确保是普通的字符串
+                'features': feature_dict,
+                'news_count': int(len(latest_news))  # 确保是普通的int类型
+            }
+            
+        except Exception as e:
+            self.logger.error(f"预测失败: {str(e)}")
+            return {
+                'date': None,
+                'prediction': 0,
+                'confidence': 0.0,
+                'reasoning': f"预测失败: {str(e)}",
+                'features': {},
+                'news_count': 0
+            }
+
+    def _analyze_with_llm(self, features: pd.DataFrame, 
+                         news_df: pd.DataFrame, 
+                         market: str, 
+                         symbol: str) -> Tuple[int, str]:
+        """使用LLM分析数据并生成预测
+        Returns:
+            (预测结果, 推理过程) 的元组
+        """
+        try:
+            # 准备提示信息
+            prompt = self._prepare_prompt(features, news_df, market, symbol)
+            
+            # 调用Ollama API
+            response = requests.post(
+                self.config['model']['ollama_url'],
+                json={
+                    "model": self.config['model']['ollama_model'],
+                    "prompt": prompt,
+                    "stream": False
+                }
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Ollama API调用失败: {response.text}")
+            
+            # 解析响应
+            result = response.json()
+            analysis = result['response']
+            
+            # 解析预测结果
+            prediction = 1 if "上涨" in analysis else 0
+            
+            return prediction, analysis
+            
+        except Exception as e:
+            self.logger.error(f"LLM分析失败: {str(e)}")
+            raise
+
+    def _prepare_prompt(self, features: pd.DataFrame, 
+                       news_df: pd.DataFrame, 
+                       market: str, 
+                       symbol: str) -> str:
+        """准备LLM提示信息"""
+        try:
+            # 检查特征数据
+            if features.empty:
+                raise ValueError("特征数据为空")
+            
+            # 获取特征值
+            feature_values = features.iloc[0]
+            
+            prompt = f"""分析以下数据，预测{market}市场{symbol}股票明天的走势：
+
+技术指标：
+- 价格变动：{feature_values['price_change']:.2%}
+- 成交量变动：{feature_values['volume_change']:.2%}
+- RSI：{feature_values['rsi']:.2f}
+- 波动率：{feature_values['volatility']:.2f}
+- 3日均线：{feature_values['ma3']:.2f}
+- 5日均线：{feature_values['ma5']:.2f}
+- 10日均线：{feature_values['ma10']:.2f}
+- 今日新闻数量：{feature_values['news_count']}
+
+今日新闻：
+"""
+            # 添加新闻内容
+            if len(news_df) > 0:
+                for _, news in news_df.iterrows():
+                    prompt += f"- {news['title']}\n"
+            else:
+                prompt += "（今日无相关新闻）\n"
+            
+            prompt += "\n请分析这些数据，并给出明天的预测（上涨或下跌）及理由。"
+            
+            return prompt
+            
+        except Exception as e:
+            self.logger.error(f"准备提示信息失败: {str(e)}")
+            raise
+
+    def _calculate_confidence(self, features: pd.DataFrame) -> float:
+        """计算预测置信度"""
+        # 这里可以实现更复杂的置信度计算逻辑
+        return 0.7
+
+def save_prediction(result: Dict, stock_code: str, result_dir: str = "result"):
+    """保存预测结果到文件
+    Args:
+        result: 预测结果字典
+        stock_code: 股票代码
+        result_dir: 结果保存目录
+    """
+    try:
+        # 创建结果目录
+        os.makedirs(result_dir, exist_ok=True)
+        
+        # 构建文件路径
+        file_path = os.path.join(result_dir, f"{stock_code}.json")
+        
+        # 保存结果
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+            
+        logging.info(f"预测结果已保存到: {file_path}")
+        
+    except Exception as e:
+        logging.error(f"保存预测结果失败: {str(e)}")
+
+def main():
+    """测试预测器"""
+    try:
+        predictor = Predictor()
+        
+        # 获取要预测的股票列表
+        stocks = predictor.config['data'].get('stocks', {
+            'CN': [predictor.config['data'].get('cn_stock', '600519.SH')],
+            'US': [predictor.config['data'].get('us_stock', 'AAPL')]
+        })
+        
+        # 测试中国市场预测
+        print("\n中国市场预测结果:")
+        for stock in stocks['CN']:
+            try:
+                result = predictor.predict("CN", stock)
+                print(f"\n{stock} 预测结果:")
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                # 保存预测结果
+                save_prediction(result, stock)
+            except Exception as e:
+                logging.error(f"预测 {stock} 失败: {str(e)}")
+                continue
+        
+        # 测试美国市场预测
+        print("\n美国市场预测结果:")
+        for stock in stocks['US']:
+            try:
+                result = predictor.predict("US", stock)
+                print(f"\n{stock} 预测结果:")
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                # 保存预测结果
+                save_prediction(result, stock)
+            except Exception as e:
+                logging.error(f"预测 {stock} 失败: {str(e)}")
+                continue
+        
+    except Exception as e:
+        logging.error(f"测试预测器失败: {str(e)}")
+        raise
+
+if __name__ == "__main__":
+    main() 

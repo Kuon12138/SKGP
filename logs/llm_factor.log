@@ -31,3 +31,21 @@
 评估 000100.SZ 数据集:
 2025-04-02 17:23:00,868 - ERROR - 评估过程中出错: 找不到股票数据文件: Data\CMIN-CN\price\preprocessed\000100.SZ.txt
 2025-04-02 17:23:00,868 - ERROR - 程序执行出错: 找不到股票数据文件: Data\CMIN-CN\price\preprocessed\000100.SZ.txt
+2025-04-03 12:07:02,687 - INFO - 
+开始评估模型...
+2025-04-03 12:07:02,688 - INFO - 
+评估 000100.SZ 数据集:
+2025-04-03 12:07:02,688 - ERROR - 评估过程中出错: 价格数据路径不存在: Data\CMIN-US\price\processed
+2025-04-03 12:07:02,688 - ERROR - 程序执行出错: 价格数据路径不存在: Data\CMIN-US\price\processed
+2025-04-03 12:07:44,710 - INFO - 
+开始评估模型...
+2025-04-03 12:07:44,710 - INFO - 
+评估 000100.SZ 数据集:
+2025-04-03 12:07:44,710 - ERROR - 评估过程中出错: 价格数据路径不存在: Data\CMIN-CN\price\processed
+2025-04-03 12:07:44,710 - ERROR - 程序执行出错: 价格数据路径不存在: Data\CMIN-CN\price\processed
+2025-04-03 12:08:10,439 - INFO - 
+开始评估模型...
+2025-04-03 12:08:10,439 - INFO - 
+评估 000100.SZ 数据集:
+2025-04-03 12:08:10,439 - ERROR - 评估过程中出错: 价格数据路径不存在: Data\CMIN-CN\price\processed
+2025-04-03 12:08:10,439 - ERROR - 程序执行出错: 价格数据路径不存在: Data\CMIN-CN\price\processed
