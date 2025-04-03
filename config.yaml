@@ -2,10 +2,38 @@ model:
   window_size: 10
   k_factors: 5
   dataset: "Data"
-  ollama_url: "http://localhost:11434/api/generate"
+  ollama_url: "http://localhost:11434"
   ollama_model: "llama3.1:8b-instruct-q8_0"
   bert_model: "bert-base-chinese"
   data_root: "Data"
+  ollama_timeout: 180
+  ollama_max_retries: 3
+  ollama_retry_delay: 2
+  
+  gpu_settings:
+    num_threads: 4
+    gpu_memory_utilization: 0.8
+    use_cuda: true
+    torch_dtype: "float16"
+    memory_fraction: 0.8
+    num_workers: 4
+    pin_memory: true
+    cuda_device: 0
+    mixed_precision: true
+    generation_settings:
+      temperature: 0.7
+      top_p: 0.9
+      top_k: 40
+      num_predict: 2048
+      stop: ["[/INST]"]
+
+  bert_settings:
+    batch_size: 8
+    max_length: 512
+    truncation: true
+    padding: "max_length"
+    return_tensors: "pt"
+    device: "cuda"
 
 logging:
   level: "INFO"
@@ -14,7 +42,36 @@ logging:
 
 data:
   start_date: "2018-01-01"
-  end_date: "2018-03-01"
+  end_date: "2018-02-01"
   stocks:
-    CN: ["600519.SH"]
-    US: ["AAPL"]
+    CN:
+      - "600519.SH"  # 贵州茅台
+  
+  
+    US:
+      - "AAPL"      # 苹果
+
+
+  data_structure:  # 数据结构配置
+    price:  # 价格数据结构
+      required_columns:  # 必需列
+        - "date"
+        - "open"
+        - "high"
+        - "low"
+        - "close"
+        - "volume"
+      date_format: "%Y-%m-%d"  # 日期格式
+    
+    news:  # 新闻数据结构
+      required_columns:  # 必需列
+        - "date"
+        - "title"
+        - "description"
+      date_format: "%Y-%m-%d"  # 日期格式
+
+  preprocessing:  # 预处理配置
+    remove_duplicates: true  # 移除重复数据
+    fill_missing: "ffill"    # 填充缺失值方法
+    normalize: true          # 是否标准化
+  

@@ -3,6 +3,10 @@ from pathlib import Path
 from config import Config
 from data_loader import DataLoader
 from predictor import Predictor
+import os
+import json
+from datetime import datetime
+from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 
 def setup_logging(log_config):
@@ -103,50 +107,185 @@ def evaluate_dataset(config: Config, stock_symbol: str, start_date: str, end_dat
 
 
 def main():
-    """主函数"""
-    # 加载配置
-    config = Config.from_yaml("config.yaml")
-    
-    # 设置日志
-    setup_logging(config.log_config)
-    logger = logging.getLogger(__name__)
-    
+    """主函数：执行SKGP算法的股票预测流程"""
     try:
-        logger.info("\n开始评估模型...")
+        # 1. 初始化预测器和日志
+        predictor = Predictor()
+        logging.info("初始化SKGP预测系统...")
         
-        # 根据market选择执行CN或US市场测试
-        if config.data_config.market == "CN":
-            logger.info(f"\n评估 {config.data_config.cn_stock} 数据集:")
-            cn_results = evaluate_dataset(
-                config,
-                config.data_config.cn_stock,
-                config.data_config.start_date,
-                config.data_config.end_date
-            )
-            logger.info(f"\n{config.data_config.cn_stock} 评估结果:")
-            logger.info(f"准确率: {cn_results['accuracy']:.2%}")
-            logger.info(f"MCC: {cn_results['mcc']:.2%}")
-            logger.info(f"总预测次数: {cn_results['total_predictions']}")
-            logger.info(f"成功预测次数: {cn_results['successful_predictions']}")
-        elif config.data_config.market == "US":
-            logger.info(f"\n评估 {config.data_config.us_stock} 数据集:")
-            us_results = evaluate_dataset(
-                config,
-                config.data_config.us_stock,
-                config.data_config.start_date,
-                config.data_config.end_date
-            )
-            logger.info(f"\n{config.data_config.us_stock} 评估结果:")
-            logger.info(f"准确率: {us_results['accuracy']:.2%}")
-            logger.info(f"MCC: {us_results['mcc']:.2%}")
-            logger.info(f"总预测次数: {us_results['total_predictions']}")
-            logger.info(f"成功预测次数: {us_results['successful_predictions']}")
-        else:
-            logger.error(f"不支持的市场类型: {config.data_config.market}")
-            return
-            
+        # 2. 获取配置中的股票列表
+        stocks = predictor.config['data'].get('stocks', {
+            'CN': [predictor.config['data'].get('cn_stock', '600519.SH')],
+            'US': [predictor.config['data'].get('us_stock', 'AAPL')]
+        })
+        
+        # 3. 创建结果目录
+        result_dir = "predictions"
+        os.makedirs(result_dir, exist_ok=True)
+        
+        # 4. 初始化评估指标统计
+        all_predictions = []
+        all_actual = []
+        market_metrics = {
+            'CN': {'predictions': [], 'actual': []},
+            'US': {'predictions': [], 'actual': []}
+        }
+        
+        # 5. 处理中国市场
+        logging.info("\n开始处理中国市场股票...")
+        cn_results = {}
+        for stock in stocks['CN']:
+            try:
+                logging.info(f"\n分析股票: {stock}")
+                # 获取历史数据进行评估
+                evaluation_result = predictor.evaluate_historical(
+                    market="CN",
+                    symbol=stock,
+                    start_date=predictor.config['data']['start_date'],
+                    end_date=predictor.config['data']['end_date']
+                )
+                
+                # 收集评估数据
+                if evaluation_result:
+                    market_metrics['CN']['predictions'].extend(evaluation_result['predictions'])
+                    market_metrics['CN']['actual'].extend(evaluation_result['actual'])
+                    all_predictions.extend(evaluation_result['predictions'])
+                    all_actual.extend(evaluation_result['actual'])
+                
+                # 进行当前预测
+                logging.info("进行当前预测...")
+                result = predictor.predict("CN", stock)
+                
+                # 记录分析阶段和保存结果
+                cn_results[stock] = {
+                    'current_prediction': result,
+                    'historical_evaluation': evaluation_result
+                }
+                
+                # 保存详细结果
+                result_file = os.path.join(result_dir, f"CN_{stock}_{datetime.now().strftime('%Y%m%d')}.json")
+                with open(result_file, 'w', encoding='utf-8') as f:
+                    json.dump(cn_results[stock], f, indent=2, ensure_ascii=False)
+                
+            except Exception as e:
+                logging.error(f"处理股票 {stock} 时发生错误: {str(e)}")
+                continue
+        
+        # 6. 处理美国市场
+        logging.info("\n开始处理美国市场股票...")
+        us_results = {}
+        for stock in stocks['US']:
+            try:
+                logging.info(f"\n分析股票: {stock}")
+                # 获取历史数据进行评估
+                evaluation_result = predictor.evaluate_historical(
+                    market="US",
+                    symbol=stock,
+                    start_date=predictor.config['data']['start_date'],
+                    end_date=predictor.config['data']['end_date']
+                )
+                
+                # 收集评估数据
+                if evaluation_result:
+                    market_metrics['US']['predictions'].extend(evaluation_result['predictions'])
+                    market_metrics['US']['actual'].extend(evaluation_result['actual'])
+                    all_predictions.extend(evaluation_result['predictions'])
+                    all_actual.extend(evaluation_result['actual'])
+                
+                # 进行当前预测
+                logging.info("进行当前预测...")
+                result = predictor.predict("US", stock)
+                
+                # 记录分析阶段和保存结果
+                us_results[stock] = {
+                    'current_prediction': result,
+                    'historical_evaluation': evaluation_result
+                }
+                
+                # 保存详细结果
+                result_file = os.path.join(result_dir, f"US_{stock}_{datetime.now().strftime('%Y%m%d')}.json")
+                with open(result_file, 'w', encoding='utf-8') as f:
+                    json.dump(us_results[stock], f, indent=2, ensure_ascii=False)
+                
+            except Exception as e:
+                logging.error(f"处理股票 {stock} 时发生错误: {str(e)}")
+                continue
+        
+        # 7. 计算整体评估指标
+        metrics = {
+            'overall': {
+                'accuracy': accuracy_score(all_actual, all_predictions) if all_predictions else 0,
+                'mcc': matthews_corrcoef(all_actual, all_predictions) if all_predictions else 0,
+                'total_predictions': len(all_predictions)
+            },
+            'CN': {
+                'accuracy': accuracy_score(
+                    market_metrics['CN']['actual'], 
+                    market_metrics['CN']['predictions']
+                ) if market_metrics['CN']['predictions'] else 0,
+                'mcc': matthews_corrcoef(
+                    market_metrics['CN']['actual'], 
+                    market_metrics['CN']['predictions']
+                ) if market_metrics['CN']['predictions'] else 0,
+                'total_predictions': len(market_metrics['CN']['predictions'])
+            },
+            'US': {
+                'accuracy': accuracy_score(
+                    market_metrics['US']['actual'], 
+                    market_metrics['US']['predictions']
+                ) if market_metrics['US']['predictions'] else 0,
+                'mcc': matthews_corrcoef(
+                    market_metrics['US']['actual'], 
+                    market_metrics['US']['predictions']
+                ) if market_metrics['US']['predictions'] else 0,
+                'total_predictions': len(market_metrics['US']['predictions'])
+            }
+        }
+        
+        # 8. 生成汇总报告
+        logging.info("\n生成预测汇总报告...")
+        summary = {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'metrics': metrics,
+            'cn_market': {
+                'total_stocks': len(stocks['CN']),
+                'successful_predictions': len(cn_results),
+                'results': cn_results
+            },
+            'us_market': {
+                'total_stocks': len(stocks['US']),
+                'successful_predictions': len(us_results),
+                'results': us_results
+            }
+        }
+        
+        # 打印评估指标
+        logging.info("\n模型评估指标:")
+        logging.info("整体表现:")
+        logging.info(f"准确率 (ACC): {metrics['overall']['accuracy']:.4f}")
+        logging.info(f"马修斯相关系数 (MCC): {metrics['overall']['mcc']:.4f}")
+        logging.info(f"总预测次数: {metrics['overall']['total_predictions']}")
+        
+        logging.info("\n中国市场:")
+        logging.info(f"准确率 (ACC): {metrics['CN']['accuracy']:.4f}")
+        logging.info(f"马修斯相关系数 (MCC): {metrics['CN']['mcc']:.4f}")
+        logging.info(f"预测次数: {metrics['CN']['total_predictions']}")
+        
+        logging.info("\n美国市场:")
+        logging.info(f"准确率 (ACC): {metrics['US']['accuracy']:.4f}")
+        logging.info(f"马修斯相关系数 (MCC): {metrics['US']['mcc']:.4f}")
+        logging.info(f"预测次数: {metrics['US']['total_predictions']}")
+        
+        # 保存汇总报告
+        summary_file = os.path.join(result_dir, f"summary_{datetime.now().strftime('%Y%m%d')}.json")
+        with open(summary_file, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+        logging.info(f"\n汇总报告已保存至：{summary_file}")
+        
+        logging.info("\nSKGP预测流程完成！")
+        
     except Exception as e:
-        logger.error(f"程序执行出错: {str(e)}")
+        logging.error(f"执行SKGP预测流程时发生错误: {str(e)}")
         raise
 
 

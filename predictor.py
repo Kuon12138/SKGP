@@ -12,6 +12,8 @@ import yaml
 from data_loader import DataLoader
 import json
 import os
+from datetime import datetime
+import time
 
 
 class Predictor:
@@ -23,16 +25,32 @@ class Predictor:
         """
         self._setup_logging()
         self.config = self._load_config(config_path)
+        
+        # GPU设置和性能测试
+        gpu_available = self._setup_gpu()
+        
+        if not gpu_available:
+            # 如果GPU不可用，调整配置
+            self.logger.info("切换到CPU模式，调整配置...")
+            self.config['model']['gpu_settings'].update({
+                'num_gpu_layers': 0,
+                'batch_size': 32,  # 减小批处理大小
+                'num_threads': max(1, os.cpu_count() - 1)  # 使用CPU线程
+            })
+        
         self.data_loader = DataLoader(config_path)
         self._init_models()
 
     def _setup_logging(self):
         """设置日志配置"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s'
-        )
         self.logger = logging.getLogger(__name__)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
+            self.logger.propagate = False# 防止日志向上传递
 
     def _load_config(self, config_path: str) -> dict:
         """加载配置文件"""
@@ -43,38 +61,98 @@ class Predictor:
             self.logger.error(f"加载配置文件失败: {str(e)}")
             raise
 
+    def _setup_gpu(self):
+        """优化GPU设置"""
+        if torch.cuda.is_available():
+            try:
+                # 基础设置
+                self.device = torch.device('cuda:0')
+                
+                # 设置GPU内存分配策略
+                torch.cuda.set_per_process_memory_fraction(
+                    self.config['model']['gpu_settings']['memory_fraction']
+                )
+                
+                # 启用自动混合精度
+                self.scaler = torch.amp.GradScaler('cuda')  # 修复弃用警告
+                self.autocast = torch.amp.autocast('cuda')
+                
+                # 性能优化
+                torch.backends.cudnn.benchmark = True
+                torch.backends.cuda.matmul.allow_tf32 = True
+                
+                # 静默执行GPU性能测试
+                size = 2000
+                a = torch.randn(size, size, device='cuda')
+                b = torch.randn(size, size, device='cuda')
+                torch.cuda.synchronize()
+                _ = torch.mm(a, b)
+                torch.cuda.synchronize()
+                
+                # 清理内存
+                del a, b
+                torch.cuda.empty_cache()
+                
+                return True
+                
+            except Exception as e:
+                self.logger.error(f"GPU设置失败: {str(e)}")
+                self.device = torch.device('cpu')
+                return False
+                
+        self.device = torch.device('cpu')
+        return False
+
     def _init_models(self):
         """初始化模型"""
-        # 初始化BERT模型
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config['model']['bert_model'])
-        self.model = AutoModel.from_pretrained(self.config['model']['bert_model'])
-        
-        # 设置设备
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
-
-    def _call_ollama(self, prompt: str) -> str:
-        """
-        调用Ollama API
-
-        Args:
-            prompt: 提示文本
-
-        Returns:
-            API响应文本
-        """
-        data = {
-            "model": self.config['model']['ollama_model'],
-            "prompt": prompt,
-            "stream": False
-        }
-
         try:
-            response = requests.post(self.config['model']['ollama_url'], json=data)
-            response.raise_for_status()
-            return response.json()["response"]
+            # 初始化BERT模型和tokenizer
+            self.tokenizer = AutoTokenizer.from_pretrained(self.config['model']['bert_model'])
+            self.bert_model = AutoModel.from_pretrained(self.config['model']['bert_model'])
+            
+            # 将模型移动到正确的设备
+            self.bert_model = self.bert_model.to(self.device)
+            
+            # 设置为评估模式
+            self.bert_model.eval()
+            
         except Exception as e:
-            self.logger.error(f"调用Ollama API时出错: {e}")
+            self.logger.error(f"BERT模型初始化失败: {str(e)}")
+            raise
+
+    def _get_ollama_response(self, prompt: str) -> str:
+        """获取Ollama API响应"""
+        try:
+            timeout = self.config['model']['ollama_timeout']
+            
+            response = requests.post(
+                f"{self.config['model']['ollama_url']}/api/generate",
+                json={
+                    "model": self.config['model']['ollama_model'],
+                    "prompt": f"[INST] {prompt} [/INST]",
+                    "stream": False,
+                    "options": {
+                        "temperature": self.config['model']['gpu_settings']['generation_settings']['temperature'],
+                        "top_p": self.config['model']['gpu_settings']['generation_settings']['top_p'],
+                        "top_k": self.config['model']['gpu_settings']['generation_settings']['top_k'],
+                        "num_predict": self.config['model']['gpu_settings']['generation_settings']['num_predict']
+                    }
+                },
+                timeout=timeout
+            )
+        
+            if response.status_code != 200:
+                raise Exception(f"API调用失败: {response.text}")
+            
+            # 清理GPU缓存
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            result = response.json()
+            return result['response'].strip()
+            
+        except Exception as e:
+            self.logger.error(f"Ollama API调用失败: {str(e)}")
             return ""
 
     def get_stock_movement(self, prices: List[float]) -> List[int]:
@@ -111,7 +189,7 @@ class Predictor:
 
 请只填写关系类型，不要添加其他解释。"""
 
-        return self._call_ollama(prompt)
+        return self._get_ollama_response(prompt)
 
     def extract_factors(self, stock_target: str, news_text: str) -> List[str]:
         """
@@ -131,7 +209,7 @@ class Predictor:
 
 请列出因素，每行一个，不要添加编号或其他解释。"""
 
-        response = self._call_ollama(prompt)
+        response = self._get_ollama_response(prompt)
         factors = response.split('\n')
         return [f.strip() for f in factors if f.strip()]
 
@@ -199,7 +277,7 @@ class Predictor:
 请先填写"上涨"或"下跌"，然后给出详细的分析理由。"""
 
             # 获取预测结果
-            prediction_text = self._call_ollama(prompt)
+            prediction_text = self._get_ollama_response(prompt)
             if not prediction_text:
                 raise ValueError("无法获取预测结果")
 
@@ -212,76 +290,278 @@ class Predictor:
             self.logger.error(f"预测过程中出错: {str(e)}")
             raise
 
-    def evaluate(self,
-                 stock_data: pd.DataFrame,
-                 news_data: List[Dict],
-                 stock_symbol: str) -> Dict[str, float]:
-        """
-        评估模型性能
-
+    def evaluate(self, stock_data: pd.DataFrame, news_data: pd.DataFrame, stock_symbol: str) -> Dict:
+        """评估模型性能
         Args:
             stock_data: 股票数据
             news_data: 新闻数据
             stock_symbol: 股票代码
-
         Returns:
-            包含准确率和MCC的评估结果
+            评估结果字典
+        """
+        predictions = []
+        actual_movements = []
+        results = []
+
+        for date in stock_data.index[:-1]:  # 除去最后一天
+            try:
+                next_day = stock_data.index[stock_data.index.get_loc(date) + 1]
+                
+                # 获取当天的预测
+                result = self.predict_single_day(
+                    stock_symbol,
+                    date,
+                    news_data[news_data.index <= date],
+                    stock_data[:date],
+                    stock_data.index
+                )
+                
+                # 获取实际走势
+                actual = 1 if stock_data.loc[next_day, 'close'] > stock_data.loc[date, 'close'] else 0
+                
+                predictions.append(result['prediction'])
+                actual_movements.append(actual)
+                results.append(result)
+                
+            except Exception as e:
+                self.logger.error(f"评估日期 {date} 时发生错误: {str(e)}")
+
+        # 计算评估指标
+        accuracy = accuracy_score(actual_movements, predictions) if predictions else 0
+        mcc = matthews_corrcoef(actual_movements, predictions) if predictions else 0
+
+        return {
+            'accuracy': accuracy,
+            'mcc': mcc,
+            'total_predictions': len(predictions),
+            'results': results
+        }
+
+    def predict_single_day(self, stock: str, date: datetime, 
+                          news_df: pd.DataFrame, price_df: pd.DataFrame, 
+                          date_history: pd.DatetimeIndex) -> Dict:
+        """单日预测
+        Args:
+            stock: 股票代码
+            date: 预测日期
+            news_df: 新闻数据
+            price_df: 价格数据
+            date_history: 日期历史
+        Returns:
+            预测结果字典
         """
         try:
-            if len(stock_data) < self.config['model']['window_size']:
-                raise ValueError(f"数据量不足，需要至少{self.config['model']['window_size']}天的数据")
-
-            predictions = []
-            actuals = []
-
-            # 对每个交易日进行预测
-            for i in range(self.config['model']['window_size'], len(stock_data)):
-                try:
-                    date_target = stock_data.index[i].strftime('%Y-%m-%d')
-                    price_history = stock_data['Close'].iloc[i - self.config['model']['window_size']:i].tolist()
-                    date_history = stock_data.index[i - self.config['model']['window_size']:i].strftime('%Y-%m-%d').tolist()
-
-                    # 获取当天的新闻
-                    day_news = [n for n in news_data if n['publishedAt'].strftime('%Y-%m-%d') == date_target]
-                    if not day_news:
-                        self.logger.warning(f"警告：{date_target}没有相关新闻，跳过该日期")
-                        continue
-
-                    news_text = "\n".join([n['title'] + "\n" + n['description'] for n in day_news])
-
-                    # 进行预测
-                    prediction, _ = self.predict_stock_movement(
-                        stock_symbol,
-                        date_target,
-                        news_text,
-                        price_history,
-                        date_history
-                    )
-
-                    predictions.append(prediction)
-                    actuals.append(1 if stock_data['Close'].iloc[i] > stock_data['Close'].iloc[i - 1] else 0)
-
-                except Exception as e:
-                    self.logger.error(f"处理{date_target}数据时出错: {str(e)}")
-                    continue
-
-            if not predictions or not actuals:
-                raise ValueError("没有成功完成任何预测")
-
-            # 计算评估指标
-            acc = accuracy_score(actuals, predictions)
-            mcc = matthews_corrcoef(actuals, predictions)
-
+            # 1. 获取背景知识
+            knowledge = self._get_background_knowledge(stock, news_df)
+            
+            # 2. 提取影响因素
+            factors = self._extract_factors(stock, news_df)
+            
+            # 3. 获取BERT特征
+            bert_features = self._get_bert_features(news_df)
+            
+            # 4. 准备价格历史文本
+            price_history = self._prepare_price_history(price_df)
+            
+            # 5. 构建最终预测提示
+            prompt = self._build_prediction_prompt(
+                price_data=price_df,
+                news_data=news_df,
+                bert_features=bert_features
+            )
+            
+            # 6. 获取预测结果
+            prediction, reasoning = self._get_prediction(prompt)
+            
             return {
-                'accuracy': acc,
-                'mcc': mcc,
-                'total_predictions': len(predictions),
-                'successful_predictions': sum(1 for p, a in zip(predictions, actuals) if p == a)
+                'date': date.strftime('%Y-%m-%d'),
+                'prediction': prediction,
+                'confidence': self._calculate_confidence(factors, bert_features),
+                'reasoning': reasoning,
+                'knowledge': knowledge,
+                'factors': factors
             }
-
+            
         except Exception as e:
-            self.logger.error(f"评估过程中出错: {str(e)}")
-            raise
+            self.logger.error(f"单日预测失败: {str(e)}")
+            return self._get_default_prediction(date)
+
+    def _get_bert_features(self, news_data: pd.DataFrame) -> torch.Tensor:
+        """提取新闻文本的BERT特征"""
+        try:
+            if news_data.empty:
+                return None
+            
+            # 获取配置
+            bert_config = self.config['model']['bert_settings']
+            batch_size = bert_config['batch_size']
+            
+            # 准备文本数据
+            texts = news_data['title'].fillna('') + ' ' + news_data['description'].fillna('')
+            
+            # 初始化特征列表
+            all_features = []
+            
+            # 批处理处理文本
+            for i in range(0, len(texts), batch_size):
+                batch_texts = texts[i:i + batch_size].tolist()
+                
+                # 使用tokenizer处理批次数据
+                inputs = self.tokenizer(
+                    batch_texts,
+                    max_length=bert_config['max_length'],
+                    padding=bert_config['padding'],
+                    truncation=bert_config['truncation'],
+                    return_tensors=bert_config['return_tensors']
+                )
+                
+                # 将输入移动到正确的设备
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                
+                # 使用新的autocast API
+                with torch.no_grad(), torch.amp.autocast('cuda'):
+                    outputs = self.bert_model(**inputs)
+                    
+                # 获取[CLS]标记的输出作为特征
+                batch_features = outputs.last_hidden_state[:, 0, :]
+                all_features.append(batch_features.cpu())
+                
+                # 清理GPU缓存
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            
+            # 合并所有特征
+            if all_features:
+                features = torch.cat(all_features, dim=0)
+                return features.to(self.device)
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"BERT特征提取失败: {str(e)}")
+            return None
+
+    def _get_background_knowledge(self, stock: str, news_df: pd.DataFrame) -> str:
+        """获取股票相关的背景知识"""
+        try:
+            template = f"""作为金融专家，请分析{stock}的以下特征：
+
+1. 公司基本面：
+- 所属行业
+- 主营业务
+- 市场地位
+
+2. 相关方关系：
+- 主要竞争对手
+- 上下游关系
+- 产业链位置
+
+请基于新闻内容进行分析：
+{chr(10).join(news_df['title'].tolist()) if not news_df.empty else '暂无相关新闻'}
+
+请提供简洁的分析结果，每项特征用一句话概括。"""
+
+            return self._get_ollama_response(template)
+            
+        except Exception as e:
+            self.logger.error(f"获取背景知识失败: {str(e)}")
+            return ""
+
+    def _extract_factors(self, stock: str, news_df: pd.DataFrame) -> List[str]:
+        """提取影响股价的因素"""
+        try:
+            if news_df.empty:
+                return []
+                
+            news_text = "\n".join(news_df['title'].tolist())
+            template = f"""作为金融专家，请从以下新闻中提取可能影响{stock}股价的关键因素：
+
+新闻内容：
+{news_text}
+
+请按以下类别分析影响因素：
+1. 公司层面（如业绩、战略、管理层变动等）
+2. 行业层面（如产业政策、供需关系、技术革新等）
+3. 市场层面（如宏观经济、资金面、市场情绪等）
+
+请列出最重要的{self.config['model']['k_factors']}个因素，每个因素需要：
+1. 明确说明影响方向（利好/利空）
+2. 给出影响程度（高/中/低）
+3. 解释影响机制
+
+请按"因素：影响方向（影响程度）- 影响机制"的格式输出。"""
+            
+            response = self._get_ollama_response(template)
+            factors = [f.strip() for f in response.split('\n') if f.strip()]
+            return factors[:self.config['model']['k_factors']]  # 确保返回指定数量的因素
+            
+        except Exception as e:
+            self.logger.error(f"提取因素失败: {str(e)}")
+            return []
+
+    def _prepare_price_history(self, price_df: pd.DataFrame) -> str:
+        """准备价格历史文本
+        Args:
+            price_df: 价格数据
+        Returns:
+            价格历史文本
+        """
+        history = []
+        for _, row in price_df.iterrows():
+            date = row['date'].strftime('%Y-%m-%d')
+            change = "上涨" if row['close'] > row['open'] else "下跌"
+            history.append(f"在 {date}，股价{change}")
+        return "\n".join(history)
+
+    def _build_prediction_prompt(self, price_data: pd.DataFrame, news_data: pd.DataFrame, bert_features: torch.Tensor) -> str:
+        """构建预测提示"""
+        try:
+            # 处理BERT特征
+            if bert_features is None:
+                bert_features = self._get_bert_features(news_data)
+            
+            
+            
+        except Exception as e:
+            self.logger.error(f"构建提示失败: {str(e)}")
+            return ""
+
+    def _analyze_bert_features(self, features: torch.Tensor) -> str:
+        """分析BERT特征"""
+        # 简单的特征分析示例
+        sentiment_score = features.mean().item()
+        return f"新闻情感倾向：{'积极' if sentiment_score > 0 else '消极'} (得分: {sentiment_score:.2f})"
+
+    def _get_prediction(self, prompt: str) -> Tuple[int, str]:
+        """获取预测结果"""
+        try:
+            response = self._get_ollama_response(prompt)
+            
+            # 解析预测结果
+            prediction = 1 if "上涨" in response else 0
+            
+            return prediction, response
+            
+        except Exception as e:
+            self.logger.error(f"获取预测结果失败: {str(e)}")
+            return 0, str(e)
+
+    def _calculate_confidence(self, factors: List[str], bert_features: torch.Tensor) -> float:
+        """计算预测置信度"""
+        # 结合因素数量和BERT特征计算置信度
+        factor_confidence = min(len(factors) * 0.2, 0.5)
+        bert_confidence = min(abs(bert_features.mean().item()), 0.5)
+        return factor_confidence + bert_confidence
+
+    def _get_default_prediction(self, date: datetime) -> Dict:
+        """获取默认预测结果"""
+        return {
+            'date': date.strftime('%Y-%m-%d'),
+            'prediction': 0,
+            'confidence': 0.0,
+            'reasoning': "预测失败",
+            'knowledge': "",
+            'factors': []
+        }
 
     def predict(self, market: str, symbol: str) -> Dict:
         """进行预测
@@ -298,56 +578,37 @@ class Predictor:
                 market, symbol, window_size
             )
             
-            # 检查数据是否足够
-            if len(price_df) < window_size:
-                raise ValueError(f"价格数据不足，需要至少 {window_size} 条数据，但只有 {len(price_df)} 条")
+            # 1. 获取背景知识
+            knowledge = self._get_background_knowledge(symbol, news_df)
             
-            # 准备特征
-            features, _ = self.data_loader.prepare_features(
-                price_df, news_df, window_size
+            # 2. 提取影响因素
+            factors = self._extract_factors(symbol, news_df)
+            
+            # 3. 准备价格历史文本
+            price_history = self._prepare_price_history(price_df)
+            
+            # 4. 构建最终预测提示
+            prompt = self._build_prediction_prompt(
+                price_data=price_df,
+                news_data=news_df,
+                bert_features=self._get_bert_features(news_df)
             )
             
-            # 检查特征是否为空
-            if features.empty:
-                raise ValueError("无法生成特征数据")
+            # 5. 获取预测结果
+            prediction, reasoning = self._get_prediction(prompt)
             
-            # 获取最新的特征数据
-            latest_features = features.iloc[-1:]
-            
-            # 获取最新的新闻数据
+            # 准备返回结果
             latest_date = price_df['date'].max()
-            latest_news = news_df[
-                pd.to_datetime(news_df['publishedAt']).dt.date == 
-                pd.to_datetime(latest_date).date()
-            ]
-            
-            # 调用LLM进行分析
-            prediction, reasoning = self._analyze_with_llm(
-                latest_features, latest_news, market, symbol
-            )
-            
-            # 将Timestamp转换为字符串
             latest_date_str = latest_date.strftime('%Y-%m-%d') if latest_date else None
-            
-            # 处理特征数据，确保所有值都是JSON可序列化的
-            feature_dict = {}
-            for key, value in latest_features.to_dict('records')[0].items():
-                if isinstance(value, (pd.Timestamp, np.datetime64)):
-                    feature_dict[key] = value.strftime('%Y-%m-%d')
-                elif isinstance(value, (np.int64, np.int32)):
-                    feature_dict[key] = int(value)
-                elif isinstance(value, (np.float64, np.float32)):
-                    feature_dict[key] = float(value)
-                else:
-                    feature_dict[key] = value
             
             return {
                 'date': latest_date_str,
-                'prediction': int(prediction),  # 确保是普通的int类型
-                'confidence': float(self._calculate_confidence(latest_features)),  # 确保是普通的float类型
-                'reasoning': str(reasoning),  # 确保是普通的字符串
-                'features': feature_dict,
-                'news_count': int(len(latest_news))  # 确保是普通的int类型
+                'prediction': prediction,
+                'confidence': self._calculate_confidence(factors, self._get_bert_features(news_df)),
+                'reasoning': reasoning,
+                'knowledge': knowledge,
+                'factors': factors,
+                'news_count': len(news_df)
             }
             
         except Exception as e:
@@ -357,94 +618,143 @@ class Predictor:
                 'prediction': 0,
                 'confidence': 0.0,
                 'reasoning': f"预测失败: {str(e)}",
-                'features': {},
+                'knowledge': "",
+                'factors': [],
                 'news_count': 0
             }
 
-    def _analyze_with_llm(self, features: pd.DataFrame, 
-                         news_df: pd.DataFrame, 
-                         market: str, 
-                         symbol: str) -> Tuple[int, str]:
-        """使用LLM分析数据并生成预测
-        Returns:
-            (预测结果, 推理过程) 的元组
-        """
+    def evaluate_historical(self, market: str, symbol: str, 
+                           start_date: str, end_date: str) -> Dict:
+        """评估历史预测性能"""
         try:
-            # 准备提示信息
-            prompt = self._prepare_prompt(features, news_df, market, symbol)
+            self.logger.info(f"开始评估 {market} 市场 {symbol} 的历史表现...")
             
-            # 调用Ollama API
-            response = requests.post(
-                self.config['model']['ollama_url'],
-                json={
-                    "model": self.config['model']['ollama_model'],
-                    "prompt": prompt,
-                    "stream": False
-                }
+            # 1. 加载历史数据
+            price_df, news_df = self.data_loader.load_data(
+                market=market,
+                symbol=symbol,
+                start_date=start_date,
+                end_date=end_date
             )
             
-            if response.status_code != 200:
-                raise Exception(f"Ollama API调用失败: {response.text}")
+            if price_df.empty:
+                raise ValueError(f"未找到 {symbol} 的价格数据")
             
-            # 解析响应
-            result = response.json()
-            analysis = result['response']
+            # 2. 初始化结果列表
+            predictions = []
+            actual = []
+            dates = []
+            confidences = []
+            reasonings = []
             
-            # 解析预测结果
-            prediction = 1 if "上涨" in analysis else 0
+            # 3. 逐日预测
+            total_days = len(price_df) - 1
             
-            return prediction, analysis
+            # 确保日期索引是datetime类型
+            price_df.index = pd.to_datetime(price_df.index)
+            news_df.index = pd.to_datetime(news_df.index)
+            
+            for j in range(total_days):
+                try:
+                    current_date = price_df.index[j]
+                    next_date = price_df.index[j + 1]
+                    
+                    # 获取当前日期之前的数据
+                    historical_price = price_df[:current_date]
+                    historical_news = news_df[news_df.index <= current_date]
+                    
+                    # 准备预测所需的数据
+                    window_size = self.config['model']['window_size']
+                    recent_price = historical_price[-window_size:] if len(historical_price) > window_size else historical_price
+                    recent_news = historical_news[-window_size:] if len(historical_news) > window_size else historical_news
+                    
+                    # 获取BERT特征
+                    bert_features = self._get_bert_features(recent_news)
+                    
+                    # 构建预测提示
+                    prompt = self._build_prediction_prompt(
+                        price_data=recent_price,
+                        news_data=recent_news,
+                        bert_features=bert_features
+                    )
+                    
+                    # 获取预测结果
+                    prediction, reasoning = self._get_prediction(prompt)
+                    
+                    # 计算实际涨跌
+                    actual_movement = 1 if price_df.loc[next_date, 'close'] > price_df.loc[current_date, 'close'] else 0
+                    
+                    # 记录结果
+                    predictions.append(prediction)
+                    actual.append(actual_movement)
+                    dates.append(current_date.strftime('%Y-%m-%d'))
+                    confidences.append(self._calculate_confidence(
+                        self._extract_factors(symbol, recent_news),
+                        bert_features
+                    ))
+                    reasonings.append(reasoning)
+                    
+                    # 清理GPU缓存
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    
+                except Exception as e:
+                    self.logger.error(f"处理日期 {current_date} 时发生错误: {str(e)}")
+                    continue
+            
+            # 4. 计算评估指标
+            metrics = {
+                'accuracy': accuracy_score(actual, predictions) if predictions else 0,
+                'mcc': matthews_corrcoef(actual, predictions) if predictions else 0,
+                'total_predictions': len(predictions)
+            }
+            
+            # 5. 返回评估结果
+            return {
+                'predictions': predictions,
+                'actual': actual,
+                'dates': dates,
+                'confidences': confidences,
+                'metrics': metrics,
+                'detailed_results': [
+                    {
+                        'date': d,
+                        'prediction': p,
+                        'actual': a,
+                        'confidence': c,
+                        'reasoning': r,
+                        'correct': p == a
+                    }
+                    for d, p, a, c, r in zip(dates, predictions, actual, confidences, reasonings)
+                ]
+            }
             
         except Exception as e:
-            self.logger.error(f"LLM分析失败: {str(e)}")
-            raise
+            self.logger.error(f"评估历史数据时发生错误: {str(e)}")
+            return {
+                'predictions': [],
+                'actual': [],
+                'dates': [],
+                'confidences': [],
+                'metrics': {
+                    'accuracy': 0,
+                    'mcc': 0,
+                    'total_predictions': 0
+                },
+                'detailed_results': []
+            }
 
-    def _prepare_prompt(self, features: pd.DataFrame, 
-                       news_df: pd.DataFrame, 
-                       market: str, 
-                       symbol: str) -> str:
-        """准备LLM提示信息"""
+    def __del__(self):
+        """析构函数：清理GPU资源"""
         try:
-            # 检查特征数据
-            if features.empty:
-                raise ValueError("特征数据为空")
-            
-            # 获取特征值
-            feature_values = features.iloc[0]
-            
-            prompt = f"""分析以下数据，预测{market}市场{symbol}股票明天的走势：
-
-技术指标：
-- 价格变动：{feature_values['price_change']:.2%}
-- 成交量变动：{feature_values['volume_change']:.2%}
-- RSI：{feature_values['rsi']:.2f}
-- 波动率：{feature_values['volatility']:.2f}
-- 3日均线：{feature_values['ma3']:.2f}
-- 5日均线：{feature_values['ma5']:.2f}
-- 10日均线：{feature_values['ma10']:.2f}
-- 今日新闻数量：{feature_values['news_count']}
-
-今日新闻：
-"""
-            # 添加新闻内容
-            if len(news_df) > 0:
-                for _, news in news_df.iterrows():
-                    prompt += f"- {news['title']}\n"
-            else:
-                prompt += "（今日无相关新闻）\n"
-            
-            prompt += "\n请分析这些数据，并给出明天的预测（上涨或下跌）及理由。"
-            
-            return prompt
-            
+            if hasattr(self, 'bert_model'):
+                del self.bert_model
+            if hasattr(self, 'tokenizer'):
+                del self.tokenizer
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         except Exception as e:
-            self.logger.error(f"准备提示信息失败: {str(e)}")
-            raise
-
-    def _calculate_confidence(self, features: pd.DataFrame) -> float:
-        """计算预测置信度"""
-        # 这里可以实现更复杂的置信度计算逻辑
-        return 0.7
+            self.logger.error(f"清理GPU资源时出错: {str(e)}")
 
 def save_prediction(result: Dict, stock_code: str, result_dir: str = "result"):
     """保存预测结果到文件
