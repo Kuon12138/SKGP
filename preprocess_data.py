@@ -92,6 +92,9 @@ class DataPreprocessor:
             # 按日期排序并删除重复行
             new_df = new_df.sort_values('date').drop_duplicates()
             
+            # 只保留2018-2021年的数据
+            new_df = new_df[new_df['date'].str.startswith(('2018', '2019', '2020', '2021'))]
+            
             # 创建输出目录
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
             
@@ -163,6 +166,9 @@ class DataPreprocessor:
             
             # 删除无效日期的行
             new_df = new_df[new_df['publishedAt'].notna()].copy()
+            
+            # 只保留2018-2021年的数据
+            new_df = new_df[new_df['publishedAt'].str.startswith(('2018', '2019', '2020', '2021'))]
             
             # 处理标题列
             title_patterns = ['title', 'headline', 'news', '标题']

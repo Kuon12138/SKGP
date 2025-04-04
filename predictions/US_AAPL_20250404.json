@@ -1,0 +1,23 @@
+{
+  "current_prediction": {
+    "date": "2021-12-31",
+    "prediction": 0,
+    "confidence": 0.006049846764653921,
+    "reasoning": "",
+    "knowledge": "",
+    "factors": [],
+    "news_count": 243
+  },
+  "historical_evaluation": {
+    "predictions": [],
+    "actual": [],
+    "dates": [],
+    "confidences": [],
+    "metrics": {
+      "accuracy": 0,
+      "mcc": 0,
+      "total_predictions": 0
+    },
+    "detailed_results": []
+  }
+}

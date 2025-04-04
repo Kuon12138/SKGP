@@ -40,6 +40,7 @@ class Predictor:
         
         self.data_loader = DataLoader(config_path)
         self._init_models()
+        self._response_cache = {}  # 添加响应缓存
 
     def _setup_logging(self):
         """设置日志配置"""
@@ -123,33 +124,98 @@ class Predictor:
     def _get_ollama_response(self, prompt: str) -> str:
         """获取Ollama API响应"""
         try:
-            timeout = self.config['model']['ollama_timeout']
+            # 获取配置参数
+            timeout = self.config['model']['timeout']
+            max_prompt_length = self.config['model']['max_prompt_length']
+            ollama_url = self.config['model']['ollama_url']
+            ollama_model = self.config['model']['ollama_model']
             
+            # 获取生成参数
+            generation_settings = self.config['model']['gpu_settings']['generation_settings']
+            temperature = generation_settings['temperature']
+            top_p = generation_settings['top_p']
+            top_k = generation_settings['top_k']
+            num_predict = generation_settings['num_predict']
+            
+            # 检查缓存
+            cache_key = f"{ollama_model}:{prompt}"
+            if cache_key in self._response_cache:
+                return self._response_cache[cache_key]
+            
+            # 如果提示文本超过最大长度，进行智能截断
+            if len(prompt) > max_prompt_length:
+                self.logger.warning(f"提示文本过长 ({len(prompt)} > {max_prompt_length})，进行智能截断")
+                
+                # 1. 首先尝试保留关键部分
+                important_parts = [
+                    "关系：",
+                    "因素：",
+                    "历史走势：",
+                    "预测："
+                ]
+                
+                # 2. 查找关键部分的位置
+                positions = []
+                for part in important_parts:
+                    pos = prompt.find(part)
+                    if pos != -1:
+                        positions.append((pos, part))
+                    
+                # 3. 按位置排序
+                positions.sort()
+                
+                # 4. 构建新的提示文本
+                new_prompt = ""
+                for pos, part in positions:
+                    end_pos = prompt.find("\n\n", pos)
+                    if end_pos == -1:
+                        end_pos = len(prompt)
+                    part_text = prompt[pos:end_pos]
+                    if len(new_prompt) + len(part_text) <= max_prompt_length:
+                        new_prompt += part_text + "\n\n"
+                    else:
+                        break
+                
+                # 5. 如果还是太长，进行简单截断
+                if len(new_prompt) > max_prompt_length:
+                    new_prompt = prompt[:max_prompt_length-3] + "..."
+                 
+                prompt = new_prompt
+            
+            # 准备请求数据
+            request_data = {
+                "model": ollama_model,
+                "prompt": f"[INST] {prompt} [/INST]",
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "top_k": top_k,
+                    "num_predict": num_predict,
+                }
+            }
+            
+            # 发送请求
             response = requests.post(
-                f"{self.config['model']['ollama_url']}/api/generate",
-                json={
-                    "model": self.config['model']['ollama_model'],
-                    "prompt": f"[INST] {prompt} [/INST]",
-                    "stream": False,
-                    "options": {
-                        "temperature": self.config['model']['gpu_settings']['generation_settings']['temperature'],
-                        "top_p": self.config['model']['gpu_settings']['generation_settings']['top_p'],
-                        "top_k": self.config['model']['gpu_settings']['generation_settings']['top_k'],
-                        "num_predict": self.config['model']['gpu_settings']['generation_settings']['num_predict']
-                    }
-                },
+                f"{ollama_url}/api/generate",
+                json=request_data,
                 timeout=timeout
             )
-        
+            
             if response.status_code != 200:
                 raise Exception(f"API调用失败: {response.text}")
+            
+            result = response.json()
+            response_text = result['response'].strip()
+            
+            # 缓存响应
+            self._response_cache[cache_key] = response_text
             
             # 清理GPU缓存
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            result = response.json()
-            return result['response'].strip()
+            return response_text
             
         except Exception as e:
             self.logger.error(f"Ollama API调用失败: {str(e)}")
@@ -396,8 +462,8 @@ class Predictor:
             bert_config = self.config['model']['bert_settings']
             batch_size = bert_config['batch_size']
             
-            # 准备文本数据
-            texts = news_data['title'].fillna('') + ' ' + news_data['description'].fillna('')
+            # 只使用title列
+            texts = news_data['title'].fillna('')
             
             # 初始化特征列表
             all_features = []
@@ -513,13 +579,51 @@ class Predictor:
         return "\n".join(history)
 
     def _build_prediction_prompt(self, price_data: pd.DataFrame, news_data: pd.DataFrame, bert_features: torch.Tensor) -> str:
-        """构建预测提示"""
         try:
-            # 处理BERT特征
-            if bert_features is None:
-                bert_features = self._get_bert_features(news_data)
+            # 1. 提取关键信息
+            latest_date = price_data['date'].max()
+            latest_price = price_data['close'].iloc[-1]
+            price_change = (latest_price - price_data['close'].iloc[-2]) / price_data['close'].iloc[-2] * 100
             
+            # 2. 构建简洁的价格历史（最多5天）
+            price_history = []
+            for i in range(min(5, len(price_data))):
+                date = price_data['date'].iloc[-i-1]
+                price = price_data['close'].iloc[-i-1]
+                change = (price - price_data['close'].iloc[-i-2]) / price_data['close'].iloc[-i-2] * 100 if i > 0 else 0
+                price_history.append(f"{date}: {price:.2f} ({change:+.2f}%)")
             
+            # 3. 提取关键新闻（最多3条，限制正文长度）
+            recent_news = news_data.nlargest(1, 'publishedAt')
+            news_summary = []
+            for _, news in recent_news.iterrows():
+                # 限制新闻正文长度
+                content = news['title'][:100] if len(news['title']) > 100 else news['title']
+                news_summary.append(f"- {content}")
+            
+            # 4. 构建简洁的提示
+            prompt = f"""股票分析报告
+
+    当前状态：
+    - 日期: {latest_date}
+    - 最新价格: {latest_price:.2f}
+    - 涨跌幅: {price_change:+.2f}%
+
+    近期走势：
+    {chr(10).join(price_history)}
+
+    重要新闻：
+    {chr(10).join(news_summary)}
+
+    请分析以上信息，预测未来走势。"""
+            
+            # 5. 检查并限制提示长度
+            if len(prompt) > 2048:
+                self.logger.warning(f"提示文本过长 ({len(prompt)} > 2048)，进行截断")
+                # 保留关键信息
+                prompt = prompt[:2048-3] + "..."
+            
+            return prompt
             
         except Exception as e:
             self.logger.error(f"构建提示失败: {str(e)}")
@@ -527,7 +631,7 @@ class Predictor:
 
     def _analyze_bert_features(self, features: torch.Tensor) -> str:
         """分析BERT特征"""
-        # 简单的特征分析示例
+        # 简单的特征分析
         sentiment_score = features.mean().item()
         return f"新闻情感倾向：{'积极' if sentiment_score > 0 else '消极'} (得分: {sentiment_score:.2f})"
 
