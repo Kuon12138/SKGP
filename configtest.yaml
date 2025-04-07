@@ -1,15 +1,14 @@
+openai:
+  base_url: "https://openrouter:ai/api/v1"
+  api_key: "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"
 model:
-  name: "llama3.1:8b-instruct-q8_0"
-  #name: "llama3:8b-instruct-q2_K"
-  #name: "SKGP"
+  name: "meta-llama/llama-3.3-70b-instruct:free"
   max_prompt_length: 131072
   batch_size: 8
   num_threads: 4
   timeout: 300
-  ollama_url: "http://localhost:11434"
-  ollama_model: "llama3.1:8b-instruct-q8_0"
-  #ollama_model: "llama3:8b-instruct-q2_K"
-  #ollama_model: "SKGP"
+  base_url: "https://openrouter:ai/api/v1"
+  openai_model: "meta-llama/llama-3.3-70b-instruct:free"
   bert_model: "bert-base-chinese"
   window_size: 30
   k_factors: 5
@@ -46,8 +45,8 @@ data:
     news: "news.csv"
     factors: "factors.csv"
     predictions: "predictions.csv"
-  start_date: "2018-01-01"
-  end_date: "2018-01-02"
+  start_date: "2021-12-20"
+  end_date: "2021-12-31"
   preprocessing:
     remove_duplicates: true
     fill_missing: "ffill"
@@ -57,4 +56,3 @@ logging:
   level: "INFO"
   format: "%(asctime)s - %(levelname)s - %(message)s"
   file: "logs/stock_prediction.log"
-  
