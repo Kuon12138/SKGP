@@ -141,75 +141,68 @@ class Predictor:
             top_k = generation_settings['top_k']
             num_predict = generation_settings['num_predict']
 
-
-
             # 如果提示文本超过最大长度，进行智能截断
             if len(prompt) > max_prompt_length:
                 self.logger.warning(f"提示文本过长 ({len(prompt)} > {max_prompt_length})，进行智能截断")
-
-                # 1. 首先尝试保留关键部分
-                important_parts = [
-                    "关系：",
-                    "因素：",
-                    "历史走势：",
-                    "预测："
-                ]
-
-                # 2. 查找关键部分的位置
-                positions = []
-                for part in important_parts:
-                    pos = prompt.find(part)
-                    if pos != -1:
-                        positions.append((pos, part))
-
-                # 3. 按位置排序
-                positions.sort()
-
-                # 4. 构建新的提示文本
-                new_prompt = ""
-                for pos, part in positions:
-                    end_pos = prompt.find("\n\n", pos)
-                    if end_pos == -1:
-                        end_pos = len(prompt)
-                    part_text = prompt[pos:end_pos]
-                    if len(new_prompt) + len(part_text) <= max_prompt_length:
-                        new_prompt += part_text + "\n\n"
-                    else:
-                        break
-
-                # 5. 如果还是太长，进行简单截断
-                if len(new_prompt) > max_prompt_length:
-                    new_prompt = prompt[:max_prompt_length - 3] + "..."
-
-                prompt = new_prompt
+                prompt = prompt[:max_prompt_length - 3] + "..."
 
             client = openai(
                 base_url="https://openrouter.ai/api/v1",
-                api_key="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",
+                api_key=self.config['openai']['api_key'],
             )
 
+            # 使用 openai.Completion.create() 方法
+            try:
+                self.logger.debug(f"发送API请求，模型: {openai_model}, 温度: {temperature}, 最大token: {num_predict}")
+                response = client.chat.completions.create(
+                    model=openai_model,
+                    temperature=temperature,
+                    max_tokens=num_predict,
+                    top_p=top_p,
+                    timeout=timeout,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+            except Exception as e:
+                self.logger.error(f"API调用异常: {str(e)}")
+                return ""
 
-            # 使用 openai.Completion.create() 方法代替 requests
-            response = client.chat.completions.create(
-                model="meta-llama/llama-3.3-70b-instruct:free",
-                # 准备消息格式
-                temperature=temperature,
-                max_tokens=num_predict,  # OpenAI使用max_tokens限制生成长度
-                top_p=top_p,
-                timeout=timeout,
-                messages=[
-                    {"role": "user", "content": f"[INST] {prompt} [/INST]"}
-                ]
+            # 记录原始响应用于调试
+            self.logger.debug(f"API响应类型: {type(response)}")
+            self.logger.debug(f"API响应内容: {response}")
 
-
-            )
-
+            # 验证响应
+            if not response:
+                self.logger.error("API返回空响应")
+                return ""
+            
+            if not hasattr(response, 'choices'):
+                self.logger.error(f"API响应缺少choices字段，响应类型: {type(response)}")
+                return ""
+            
+            if not response.choices:
+                self.logger.error("API响应choices为空")
+                return ""
+            
+            if not hasattr(response.choices[0], 'message'):
+                self.logger.error("API响应缺少message字段")
+                return ""
+            
+            if not response.choices[0].message:
+                self.logger.error("API响应message为空")
+                return ""
+            
+            if not hasattr(response.choices[0].message, 'content'):
+                self.logger.error("API响应缺少content字段")
+                return ""
 
             response_text = response.choices[0].message.content.strip()
+            if not response_text:
+                self.logger.error("API返回空内容")
+                return ""
+
             return response_text
-
-
-
 
         except Exception as e:
             self.logger.error(f"openai API调用失败: {str(e)}")
@@ -498,24 +491,39 @@ class Predictor:
     def _get_background_knowledge(self, stock: str, news_df: pd.DataFrame) -> str:
         """获取股票相关的背景知识"""
         try:
-            template = f"""你是一个专业的金融分析师，请分析{stock}的以下特征：
+            # 准备新闻内容
+            news_content = ""
+            if not news_df.empty:
+                news_titles = news_df['title'].dropna().tolist()
+                news_content = "\n".join(news_titles[:5])  # 最多使用5条新闻
+
+            # 构建更详细的提示
+            prompt = f"""你是一个专业的金融分析师，请用中文分析{stock}的以下方面：
 
 1. 公司基本面：
-{stock}公司的所属行业是什么
-它的主营业务有哪些
-它的市场地位怎么样
+- 所属行业
+- 主营业务
+- 市场地位
 
 2. 相关方关系：
-{stock}公司的主要竞争对手有哪些
-它的上下游关系是什么样的
-它所处的产业链位置
+- 主要竞争对手
+- 上下游关系
+- 产业链位置
 
-请基于新闻内容进行分析：
-{chr(10).join(news_df['title'].tolist()) if not news_df.empty else '暂无相关新闻'}
+3. 近期动态：
+{news_content if news_content else "暂无相关新闻"}
 
-请提供简洁的分析结果，每项特征用一句话概括。"""
+请用中文提供简洁的分析结果，每项特征用一句话概括。"""
 
-            return self._get_openai_response(template)
+            self.logger.debug(f"发送背景知识分析请求: {prompt}")
+            response = self._get_openai_response(prompt)
+            
+            if not response:
+                self.logger.error("获取背景知识失败：API返回空响应")
+                return ""
+                
+            self.logger.debug(f"收到背景知识分析响应: {response}")
+            return response
 
         except Exception as e:
             self.logger.error(f"获取背景知识失败: {str(e)}")
@@ -709,12 +717,11 @@ class Predictor:
             # 5. 获取预测结果
             prediction, reasoning = self._get_prediction(prompt)
 
-            # 准备返回结果
-            latest_date = price_df['date'].max()
-            latest_date_str = latest_date.strftime('%Y-%m-%d') if latest_date else None
+            # 使用配置文件中的end_date
+            end_date = self.config['data']['end_date']
 
             return {
-                'date': latest_date_str,
+                'date': end_date,
                 'prediction': prediction,
                 'confidence': self._calculate_confidence(factors, self._get_bert_features(news_df)),
                 'reasoning': reasoning,
@@ -726,7 +733,7 @@ class Predictor:
         except Exception as e:
             self.logger.error(f"预测失败: {str(e)}")
             return {
-                'date': None,
+                'date': self.config['data']['end_date'],
                 'prediction': 0,
                 'confidence': 0.0,
                 'reasoning': f"预测失败: {str(e)}",

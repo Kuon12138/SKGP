@@ -1,13 +1,13 @@
 openai:
-  base_url: "https://openrouter:ai/api/v1"
-  api_key: "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"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key: "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"
 model:
   name: "meta-llama/llama-3.3-70b-instruct:free"
   max_prompt_length: 131072
   batch_size: 8
   num_threads: 4
   timeout: 300
-  base_url: "https://openrouter:ai/api/v1"
+  base_url: "https://openrouter.ai/api/v1"
   openai_model: "meta-llama/llama-3.3-70b-instruct:free"
   bert_model: "bert-base-chinese"
   window_size: 30
@@ -46,7 +46,7 @@ data:
     factors: "factors.csv"
     predictions: "predictions.csv"
   start_date: "2021-12-20"
-  end_date: "2021-12-31"
+  end_date: "2021-12-22"
   preprocessing:
     remove_duplicates: true
     fill_missing: "ffill"

@@ -134,3 +134,332 @@
 2025-04-07 20:31:54,566 - root - INFO - AAPL 预测完成
 2025-04-07 20:31:54,567 - root - INFO - 预测结果已保存到: result\AAPL.json
 2025-04-07 20:31:54,567 - root - INFO - SKGP预测系统运行完成
+2025-04-14 13:31:55,640 - root - INFO - SKGP预测系统启动...
+2025-04-14 13:31:55,643 - root - INFO - 配置文件加载成功
+2025-04-14 13:34:36,923 - root - INFO - SKGP预测系统启动...
+2025-04-14 13:34:36,928 - root - INFO - 配置文件加载成功
+2025-04-14 13:35:20,553 - root - INFO - 预测器初始化完成
+2025-04-14 13:35:20,553 - root - INFO - 开始中国市场预测...
+2025-04-14 13:36:25,766 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:37:30,146 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:38:49,520 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:39:03,248 - root - INFO - 600519.SH 预测完成
+2025-04-14 13:39:03,261 - root - INFO - 预测结果已保存到: result\600519.SH.json
+2025-04-14 13:39:03,261 - root - INFO - 开始美国市场预测...
+2025-04-14 13:40:08,533 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:41:12,901 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:42:26,418 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:42:35,453 - root - INFO - AAPL 预测完成
+2025-04-14 13:42:35,464 - root - INFO - 预测结果已保存到: result\AAPL.json
+2025-04-14 13:42:35,465 - root - INFO - SKGP预测系统运行完成
+2025-04-14 13:53:02,747 - root - INFO - SKGP预测系统启动...
+2025-04-14 13:53:02,753 - root - INFO - 配置文件加载成功
+2025-04-14 13:54:35,112 - root - INFO - 预测器初始化完成
+2025-04-14 13:54:35,113 - root - INFO - 开始中国市场预测...
+2025-04-14 13:55:40,044 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 13:56:44,343 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2025-04-14 15:03:47,902 - root - INFO - SKGP历史评估系统启动...
+2025-04-14 15:03:47,916 - root - INFO - 配置文件加载成功
+2025-04-14 15:03:52,789 - root - INFO - 预测器初始化完成
+2025-04-14 15:03:52,790 - root - INFO - 开始中国市场评估...
+2025-04-14 15:03:52,790 - root - ERROR - 评估 600519.SH 历史表现失败: 'Predictor' object has no attribute 'evaluate_historical'
+2025-04-14 15:03:52,790 - root - INFO - 开始美国市场评估...
+2025-04-14 15:03:52,791 - root - ERROR - 评估 AAPL 历史表现失败: 'Predictor' object has no attribute 'evaluate_historical'
+2025-04-14 15:03:52,791 - root - INFO - SKGP历史评估系统运行完成
+2025-04-14 15:17:52,627 - root - INFO - SKGP历史评估系统启动...
+2025-04-14 15:17:52,632 - root - INFO - 配置文件加载成功
+2025-04-14 15:17:57,033 - root - INFO - 预测器初始化完成
+2025-04-14 15:17:57,033 - root - INFO - 开始中国市场评估...
+2025-04-14 15:17:57,038 - root - ERROR - 评估 600519.SH 历史表现失败: 'Predictor' object has no attribute 'evaluate_historical'
+2025-04-14 15:17:57,038 - root - INFO - 开始美国市场评估...
+2025-04-14 15:17:57,038 - root - ERROR - 评估 AAPL 历史表现失败: 'Predictor' object has no attribute 'evaluate_historical'
+2025-04-14 15:17:57,038 - root - INFO - SKGP历史评估系统运行完成
+2025-04-14 15:19:26,516 - root - INFO - SKGP历史评估系统启动...
+2025-04-14 15:19:26,516 - root - INFO - 配置文件加载成功
+2025-04-14 15:19:30,765 - root - INFO - 预测器初始化完成
+2025-04-14 15:19:30,765 - root - INFO - 开始中国市场评估...
+2025-04-14 15:19:33,258 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:19:43,224 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:19:57,127 - root - INFO - SKGP历史评估系统启动...
+2025-04-14 15:19:57,130 - root - INFO - 配置文件加载成功
+2025-04-14 15:20:01,176 - root - INFO - 预测器初始化完成
+2025-04-14 15:20:01,176 - root - INFO - 开始中国市场评估...
+2025-04-14 15:20:03,188 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:20:05,612 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:20:06,560 - root - INFO - 评估结果已保存到: predictions\600519.SH.json
+2025-04-14 15:20:06,560 - root - INFO - 开始美国市场评估...
+2025-04-14 15:20:08,622 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:20:11,525 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:20:12,490 - root - INFO - 评估结果已保存到: predictions\AAPL.json
+2025-04-14 15:20:12,490 - root - INFO - SKGP历史评估系统运行完成
+2025-04-14 15:21:11,757 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:21:16,471 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:21:16,475 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:21:18,298 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:21:19,596 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:21:19,596 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:21:21,242 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:22:21,458 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:22:21,620 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:22:21,620 - data_loader_test - INFO - 价格数据目录: data\price
+2025-04-14 15:22:21,620 - data_loader_test - INFO - 新闻数据目录: data\news
+2025-04-14 15:22:25,706 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:22:25,706 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:22:27,534 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:22:28,751 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:22:28,751 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:22:30,493 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:23:47,675 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:23:47,837 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:23:47,837 - data_loader_test - INFO - 价格数据目录: data\price
+2025-04-14 15:23:47,837 - data_loader_test - INFO - 新闻数据目录: data\news
+2025-04-14 15:23:51,752 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:23:51,752 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:23:51,756 - data_loader_test - INFO - 成功加载价格数据，数据形状: (0, 6)
+2025-04-14 15:23:51,841 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (0, 3)
+2025-04-14 15:23:51,841 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:23:51,842 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:23:51,842 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:23:51,842 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:23:51,842 - data_loader_test - INFO - 成功加载价格数据，数据形状: (0, 6)
+2025-04-14 15:23:51,921 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (0, 3)
+2025-04-14 15:23:54,012 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:23:54,883 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:23:54,883 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:23:54,886 - data_loader_test - INFO - 成功加载价格数据，数据形状: (0, 6)
+2025-04-14 15:23:55,221 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (0, 3)
+2025-04-14 15:23:55,221 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:23:55,221 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:23:55,221 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:23:55,221 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:23:55,224 - data_loader_test - INFO - 成功加载价格数据，数据形状: (0, 6)
+2025-04-14 15:23:55,555 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (0, 3)
+2025-04-14 15:23:56,862 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:25:29,652 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:25:29,805 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:25:29,806 - data_loader_test - INFO - 价格数据目录: data\price
+2025-04-14 15:25:29,806 - data_loader_test - INFO - 新闻数据目录: data\news
+2025-04-14 15:25:34,629 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:25:34,634 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:25:34,639 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:25:34,640 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:25:34,640 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:25:34,640 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:25:34,640 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:25:34,643 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:25:37,418 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:25:38,282 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:25:38,282 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:25:38,282 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:25:38,282 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:25:38,282 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:25:38,282 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:25:38,282 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:25:38,291 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:25:40,660 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:27:52,264 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:27:52,417 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:27:52,420 - data_loader_test - INFO - 价格数据目录: data\price
+2025-04-14 15:27:52,420 - data_loader_test - INFO - 新闻数据目录: data\news
+2025-04-14 15:27:57,210 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:57,210 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:27:57,213 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:27:57,215 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:57,215 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:27:57,215 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:27:57,220 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:57,220 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:27:57,220 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:27:57,223 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:58,946 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:27:59,939 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:59,939 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:27:59,939 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:27:59,944 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:59,946 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:27:59,946 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:27:59,946 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:27:59,946 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:27:59,946 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:27:59,951 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:28:01,377 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:30:21,305 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:30:21,456 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:30:21,456 - data_loader_test - INFO - 价格数据目录: data\price\processed
+2025-04-14 15:30:21,456 - data_loader_test - INFO - 新闻数据目录: data\news\processed
+2025-04-14 15:30:25,644 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:25,645 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:30:25,645 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:30:25,650 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:25,650 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:30:25,650 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:30:25,651 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:25,651 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:30:25,651 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:30:25,655 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:28,283 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:30:29,098 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:29,099 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:30:29,099 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:30:29,103 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:29,103 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:30:29,103 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:30:29,106 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:29,106 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:30:29,106 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:30:29,111 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:30:30,396 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:33:58,608 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:33:58,760 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:33:58,761 - data_loader_test - INFO - 价格数据目录: data\price\processed
+2025-04-14 15:33:58,761 - data_loader_test - INFO - 新闻数据目录: data\news\processed
+2025-04-14 15:34:03,022 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:03,023 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\601318.SH.csv
+2025-04-14 15:34:03,023 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\601318.SH.csv
+2025-04-14 15:34:03,028 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:03,029 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:34:03,029 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:34:03,030 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:03,030 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\601318.SH.csv
+2025-04-14 15:34:03,030 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\601318.SH.csv
+2025-04-14 15:34:03,034 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:04,789 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:34:05,676 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:05,676 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:34:05,676 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:34:05,682 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:05,682 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:34:05,682 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:34:05,683 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:05,684 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:34:05,684 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:34:05,689 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:34:06,951 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:35:45,900 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:35:46,054 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:35:46,054 - data_loader_test - INFO - 价格数据目录: data\price\processed
+2025-04-14 15:35:46,054 - data_loader_test - INFO - 新闻数据目录: data\news\processed
+2025-04-14 15:35:50,124 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:50,124 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:35:50,124 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:35:50,132 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:50,133 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:35:50,133 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:35:50,134 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:50,134 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:35:50,134 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:35:50,137 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:51,860 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:35:52,740 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:52,740 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:35:52,740 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:35:52,744 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:52,744 - factor_extractor - WARNING - 价格数据为空
+2025-04-14 15:35:52,744 - bert_feature_extractor - WARNING - 新闻数据为空
+2025-04-14 15:35:52,746 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:52,746 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:35:52,746 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:35:52,750 - data_loader_test - ERROR - 过滤后的价格数据为空: 2025-03-15 到 2025-04-14
+2025-04-14 15:35:54,169 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:37:24,735 - __main__ - INFO - SKGP预测系统启动...
+2025-04-14 15:37:24,895 - data_loader_test - INFO - 数据根目录: data
+2025-04-14 15:37:24,895 - data_loader_test - INFO - 价格数据目录: data\price\processed
+2025-04-14 15:37:24,895 - data_loader_test - INFO - 新闻数据目录: data\news\processed
+2025-04-14 15:37:29,436 - data_loader_test - INFO - 加载数据日期范围: 2021-12-20 到 2021-12-22
+2025-04-14 15:37:29,436 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-CN\price\processed\600519.SH.csv
+2025-04-14 15:37:29,436 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-CN\news\processed\600519.SH.csv
+2025-04-14 15:37:29,441 - data_loader_test - INFO - 成功加载价格数据，数据形状: (3, 6)
+2025-04-14 15:37:29,535 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (80, 3)
+2025-04-14 15:37:29,535 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:37:29,550 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-600519.SH\price\processed\      publishedAt  ...                                        description
+31909  2021-12-20  ...                                   国窖1573涨价释放了什么信号？
+31929  2021-12-20  ...                    17万贵州茅台股东笑了：持100股者就可以买到2瓶平价飞天茅台
+31930  2021-12-20  ...                              北向资金周内净买入超百亿，中国移动本周申购
+31931  2021-12-20  ...  SpaceX第33批星链卫星上天；YouTube TV失去迪士尼节目版权；IBM和三星在半导...
+31932  2021-12-20  ...                              陆家嘴财经早餐2021年12月20日星期一
+...           ...  ...                                                ...
+31976  2021-12-22  ...                           年终盘点｜白酒涨价贯穿全年，资本市场逐渐“退烧”
+31975  2021-12-22  ...                      提价后斥资5.73亿拿地扩产？泸州老窖“重回前三”动作不断
+31987  2021-12-22  ...                               实控65家企业 开创金融茶营销模式惹争议
+31980  2021-12-22  ...                                    华鼎酒业——陕西酒商的一面旗帜
+31988  2021-12-22  ...              “西北茅台”家务事：大股东拍卖股票抵债，皇台酒业“话语权”再集中 司法拍卖
+
+[80 rows x 3 columns].csv
+2025-04-14 15:37:29,551 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-600519.SH\news\processed\      publishedAt  ...                                        description
+31909  2021-12-20  ...                                   国窖1573涨价释放了什么信号？
+31929  2021-12-20  ...                    17万贵州茅台股东笑了：持100股者就可以买到2瓶平价飞天茅台
+31930  2021-12-20  ...                              北向资金周内净买入超百亿，中国移动本周申购
+31931  2021-12-20  ...  SpaceX第33批星链卫星上天；YouTube TV失去迪士尼节目版权；IBM和三星在半导...
+31932  2021-12-20  ...                              陆家嘴财经早餐2021年12月20日星期一
+...           ...  ...                                                ...
+31976  2021-12-22  ...                           年终盘点｜白酒涨价贯穿全年，资本市场逐渐“退烧”
+31975  2021-12-22  ...                      提价后斥资5.73亿拿地扩产？泸州老窖“重回前三”动作不断
+31987  2021-12-22  ...                               实控65家企业 开创金融茶营销模式惹争议
+31980  2021-12-22  ...                                    华鼎酒业——陕西酒商的一面旗帜
+31988  2021-12-22  ...              “西北茅台”家务事：大股东拍卖股票抵债，皇台酒业“话语权”再集中 司法拍卖
+
+[80 rows x 3 columns].csv
+2025-04-14 15:37:29,551 - data_loader_test - ERROR - 价格文件不存在: data\CMIN-600519.SH\price\processed\      publishedAt  ...                                        description
+31909  2021-12-20  ...                                   国窖1573涨价释放了什么信号？
+31929  2021-12-20  ...                    17万贵州茅台股东笑了：持100股者就可以买到2瓶平价飞天茅台
+31930  2021-12-20  ...                              北向资金周内净买入超百亿，中国移动本周申购
+31931  2021-12-20  ...  SpaceX第33批星链卫星上天；YouTube TV失去迪士尼节目版权；IBM和三星在半导...
+31932  2021-12-20  ...                              陆家嘴财经早餐2021年12月20日星期一
+...           ...  ...                                                ...
+31976  2021-12-22  ...                           年终盘点｜白酒涨价贯穿全年，资本市场逐渐“退烧”
+31975  2021-12-22  ...                      提价后斥资5.73亿拿地扩产？泸州老窖“重回前三”动作不断
+31987  2021-12-22  ...                               实控65家企业 开创金融茶营销模式惹争议
+31980  2021-12-22  ...                                    华鼎酒业——陕西酒商的一面旗帜
+31988  2021-12-22  ...              “西北茅台”家务事：大股东拍卖股票抵债，皇台酒业“话语权”再集中 司法拍卖
+
+[80 rows x 3 columns].csv
+2025-04-14 15:37:31,340 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-14 15:37:32,194 - data_loader_test - INFO - 加载数据日期范围: 2021-12-20 到 2021-12-22
+2025-04-14 15:37:32,194 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-US\price\processed\AAPL.csv
+2025-04-14 15:37:32,194 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-US\news\processed\AAPL.csv
+2025-04-14 15:37:32,195 - data_loader_test - INFO - 成功加载价格数据，数据形状: (3, 6)
+2025-04-14 15:37:32,546 - data_loader_test - INFO - 成功加载新闻数据，数据形状: (61, 3)
+2025-04-14 15:37:32,546 - data_loader_test - INFO - 加载数据日期范围: 2025-03-15 到 2025-04-14
+2025-04-14 15:37:32,562 - data_loader_test - INFO - 尝试加载价格文件: data\CMIN-AAPL\price\processed\      publishedAt  ...                                        description
+52647  2021-12-20  ...  Market check: Stocks sink on stimulus blow, Om...
+52660  2021-12-20  ...  iPhone chargers could be banned in Northern Ir...
+52659  2021-12-20  ...  China Ordered Amazon to Delete Reviews of Xi J...
+52657  2021-12-20  ...  Dow Jones Futures Fall In Dangerous Whipsaw Ra...
+52656  2021-12-20  ...  Is the Omicron variant already hurting the eco...
+...           ...  ...                                                ...
+52683  2021-12-22  ...  Facebook Papers: How the 2021 leak could haunt...
+52682  2021-12-22  ...  Stock buybacks set record in Q3, led by Apple,...
+52706  2021-12-22  ...  This CEO Maxed Out Personal Credit Cards to Sa...
+52693  2021-12-22  ...  Why the Log4j vulnerability is such a big deal...
+52707  2021-12-22  ...  UPDATE 1-U.S. SEC allows Apple shareholder's p...
+
+[61 rows x 3 columns].csv
+2025-04-14 15:37:32,562 - data_loader_test - INFO - 尝试加载新闻文件: data\CMIN-AAPL\news\processed\      publishedAt  ...                                        description
+52647  2021-12-20  ...  Market check: Stocks sink on stimulus blow, Om...
+52660  2021-12-20  ...  iPhone chargers could be banned in Northern Ir...
+52659  2021-12-20  ...  China Ordered Amazon to Delete Reviews of Xi J...
+52657  2021-12-20  ...  Dow Jones Futures Fall In Dangerous Whipsaw Ra...
+52656  2021-12-20  ...  Is the Omicron variant already hurting the eco...
+...           ...  ...                                                ...
+52683  2021-12-22  ...  Facebook Papers: How the 2021 leak could haunt...
+52682  2021-12-22  ...  Stock buybacks set record in Q3, led by Apple,...
+52706  2021-12-22  ...  This CEO Maxed Out Personal Credit Cards to Sa...
+52693  2021-12-22  ...  Why the Log4j vulnerability is such a big deal...
+52707  2021-12-22  ...  UPDATE 1-U.S. SEC allows Apple shareholder's p...
+
+[61 rows x 3 columns].csv
+2025-04-14 15:37:32,562 - data_loader_test - ERROR - 价格文件不存在: data\CMIN-AAPL\price\processed\      publishedAt  ...                                        description
+52647  2021-12-20  ...  Market check: Stocks sink on stimulus blow, Om...
+52660  2021-12-20  ...  iPhone chargers could be banned in Northern Ir...
+52659  2021-12-20  ...  China Ordered Amazon to Delete Reviews of Xi J...
+52657  2021-12-20  ...  Dow Jones Futures Fall In Dangerous Whipsaw Ra...
+52656  2021-12-20  ...  Is the Omicron variant already hurting the eco...
+...           ...  ...                                                ...
+52683  2021-12-22  ...  Facebook Papers: How the 2021 leak could haunt...
+52682  2021-12-22  ...  Stock buybacks set record in Q3, led by Apple,...
+52706  2021-12-22  ...  This CEO Maxed Out Personal Credit Cards to Sa...
+52693  2021-12-22  ...  Why the Log4j vulnerability is such a big deal...
+52707  2021-12-22  ...  UPDATE 1-U.S. SEC allows Apple shareholder's p...
+
+[61 rows x 3 columns].csv
+2025-04-14 15:37:33,871 - httpx - INFO - HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"

@@ -1,0 +1,43 @@
+{
+  "historical_evaluation": {
+    "predictions": [
+      0,
+      0
+    ],
+    "actual": [
+      0,
+      1
+    ],
+    "dates": [
+      "2021-12-20",
+      "2021-12-21"
+    ],
+    "confidences": [
+      0.6470946456305683,
+      0.64696363392286
+    ],
+    "metrics": {
+      "accuracy": 0.5,
+      "mcc": 0.0,
+      "total_predictions": 2
+    },
+    "detailed_results": [
+      {
+        "date": "2021-12-20",
+        "prediction": 0,
+        "actual": 0,
+        "confidence": 0.6470946456305683,
+        "reasoning": "",
+        "correct": true
+      },
+      {
+        "date": "2021-12-21",
+        "prediction": 0,
+        "actual": 1,
+        "confidence": 0.64696363392286,
+        "reasoning": "",
+        "correct": false
+      }
+    ]
+  }
+}

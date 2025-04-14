@@ -1,9 +1,0 @@
-{
-  "date": null,
-  "prediction": 0,
-  "confidence": 0.0,
-  "reasoning": "预测失败: Predictor._build_prediction_prompt() missing 1 required positional argument: 'bert_features'",
-  "knowledge": "",
-  "factors": [],
-  "news_count": 0
-}

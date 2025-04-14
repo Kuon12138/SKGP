@@ -1,0 +1,10 @@
+{
+  "market": "US",
+  "symbol": "AAPL",
+  "prediction": 0,
+  "confidence": 0.0,
+  "reasoning": "预测失败: 'str' object has no attribute 'strftime'",
+  "knowledge": "",
+  "factors": [],
+  "timestamp": "2025-04-14 15:37:34"
+}
